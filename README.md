@@ -1,9 +1,13 @@
 Bonjour,
 
 
-Le but de ce projet est d'alimenter mon portfolio de de présenter mes compétences, ceci est un système de surveillance capable de relever la température et l'humidité d'une pièce à vivre à intervalle régulier, d'envoyer des alertes mails, 
-un signal lumineux et d’alimenter un fichier en cas de dépassement de seuil. Les données sont lisibles en temps réel via Node-Red. Il est conçu pour être un projet vitrine, d
-émontrant les concepts fondamentaux de la domotique et de l'Internet des objets (IoT).
+Le but de ce projet est d'alimenter mon portfolio de de présenter mes compétences, ceci est un système de surveillance capable de relever la température et l'humidité 
+d'une pièce à vivre à intervalle régulier, d'envoyer des alertes mails, un signal lumineux et d’alimenter un fichier en cas de dépassement de seuil. Les données sont lisibles 
+en temps réel via Node-Red. Il est conçu pour être un projet vitrine, démontrant les concepts fondamentaux de la domotique et de l'Internet des objets (IoT).
+
+Ce projet est le fruit de mon propre travail et de mes recherches dans le cadre de mon apprentissage du développement en domotique. 
+Il reste quelques aspects que je continue à optimiser, ce qui reflète mon approche continue d'amélioration. Je suis toujours ouvert à des retours constructifs pour 
+perfectionner mes compétences et mes projets dans ce domaine.
 
 1. Création de l'environnement :
 
@@ -51,9 +55,9 @@ un signal lumineux et d’alimenter un fichier en cas de dépassement de seuil. 
 
 - La fonction `on_message` est utilisée pour réagir aux messages envoyés par le broker.
 
-  Merci.
-
 7. Nettoyage des GPIO :
 
 - Lorsque le script est arrêté manuellement une déconnexion client propre est effectuée, les GPIO sont libérés, un email d'alerte d'arrêt du programme est envoyé à des adresses choisies.
+
+ Merci.
 
