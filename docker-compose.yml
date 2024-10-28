@@ -1,0 +1,49 @@
+services:
+
+  mosquitto_broker:
+    image: eclipse-mosquitto
+    container_name: mosquitto_broker
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    ports:
+      - "1883:1883"
+    networks:
+      - mqtt_network
+
+  capteur:
+    build: ./capteur           # Chemin vers le projet capteur avec Dockerfile
+    container_name: capteur_c  # Dans le contexte d'utilisation avec docker
+    privileged: true
+    command: ["exec", "python3", "main.py"]  # Utilise exec pour gérer les signaux
+    stop_signal: SIGINT
+    environment:
+      - MQTT_BROKER=mosquitto_broker
+      - TERM=xterm             # Ajout de la variable TERM pour éviter l'avertissement   
+    #devices:
+    #- /dev/gpiomem:/dev/gpiomem  # Accès au GPIO
+    #cap_add:
+      #- SYS_RAWIO  # Ajouter les capacités spécifiques
+      #- SYS_ADMIN
+    depends_on:
+      - mosquitto_broker
+    networks:
+      - mqtt_network
+    mem_limit: 256m
+
+  subscriber:
+    build: ./subscriber     # Chemin vers le projet abonné avec Dockerfile à partir du dossier où se trouve le compose (yml)
+    container_name: subscriber_c
+    command: ["exec", "python3", "main.py"]  # Utilise exec pour gérer les signaux
+    stop_signal: SIGINT
+    environment:
+      - MQTT_BROKER=mosquitto_broker
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - mosquitto_broker
+    networks:
+      - mqtt_network
+    mem_limit: 256m
+
+networks:
+  mqtt_network:
+    external: true            # signifie que Docker ne créera pas le réseau mais s'attendra à ce qu'il existe déjà

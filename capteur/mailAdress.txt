@@ -1,0 +1,7 @@
+# Liste des adresses d'expéditeurs ou de destinataires pour les alertes
+noreply@gmail.com
+noreply@orange.fr
+admin@example.com  # Adresse de l'administrateur système pour les alertes critiques
+support@example.com  # Adresse de l'équipe de support
+
+# Etc ...

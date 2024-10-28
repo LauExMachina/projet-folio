@@ -1,0 +1,124 @@
+import paho.mqtt.client as mqtt  # type: ignore
+import adafruit_dht              # type: ignore
+import board                     # type: ignore
+from datetime import datetime
+import threading
+import subprocess
+import sys
+
+from led import led
+    
+# Client
+
+client = mqtt.Client("Sonde")  # Création de l'objet client
+broker = "mosquitto_broker"  # Broker docker
+port = 1883             # ou broker = "127.0.0.1"
+
+dht_device = adafruit_dht.DHT11(board.D23, use_pulseio=False)
+
+def sonde():
+    
+    mail_count = 0                    
+    
+    try:                              # Tentative de connexion
+        
+        client.connect(broker, port)  # Connexion du client en dehors du while pour éviter la redondance de connexion
+        print("Connexion réussie")
+
+        def collect_and_publish():
+            nonlocal mail_count  # Permet d'accéder à la variable mail_count
+            
+            try:
+                temperature = dht_device.temperature    # Lecture des données du capteur
+                humidity = dht_device.humidity
+
+                print("Patientez ...\n")
+                
+                if humidity is not None and temperature is not None:
+                   
+                    print("Température ok\n", flush=True)
+                    print(f"Données transmise aux abonnés température : {temperature:.1f}°C, humidité: {humidity:.1f}%\n")
+
+                    # Publication des résultats formatés avec les unités °C et %
+                    client.publish(f"home/temperature", f"{temperature} °C")  
+                    client.publish(f"home/humidite", f"{humidity} %")            
+                    
+                    if temperature > 35:  # Choix de la température qui déclenchera l'alerte
+                        
+                        alert()             # Appel de la fonction alert
+                        mail_count += 1     # Incrémentation de 1; le count étant à 1 plus de mail ne sera envoyé (spamming)
+
+                # Redémarre le timer pour relancer la collecte après 5 secondes
+                threading.Timer(5, collect_and_publish).start()
+
+            except RuntimeError as error:
+                
+                print(f"Erreur lors de la lecture du capteur : {error.args[0]}")
+                threading.Timer(2, collect_and_publish).start()    # Attente de 2 secondes avant de réessayer si une erreur se produit
+
+            except RuntimeError as e:
+                print(f"Erreur rencontrée : {e}")
+            
+            except Exception as e:               # Autres types d'erreurs
+                raise e             
+
+        # Lance la collecte initiale
+        print("Echec, relance de la sonde")
+        collect_and_publish()
+
+    except ConnectionError as e:
+        print(f"Connexion impossible au broker : {e}")
+    
+    except KeyboardInterrupt:  # Interruption manuelle du script (ctrl + c)
+        print(f"Script arrêté manuellement")
+    
+    finally:
+        
+        try:
+            
+            if mail_count == 0:  # Pour éviter de spamer, un envoi de 1 mail par alerte
+                
+                subprocess.run(['bash', 'mailSender.sh'])
+                print("Mail(s) d'alerte envoyé(s) aux Utilisateur(s)\n")
+            
+            else:
+                print("Email(s) déjà envoyé(s)\n")
+        
+        except Exception as e:
+            print(f"Erreur : {e}")
+
+        client.disconnect()  # Déconnexion du client et nettoyage du pin
+        print("Client déconnecté\n")
+
+        print("GPIO nettoyés\n")     # Automatiquement avec Ada
+
+
+def alert():  # Fonction déclenchement d'alerte
+
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    print("Alerte !! Seuil de température dépassé\n")
+
+    with open("logAlert.txt", mode="a") as file:  # Création du fichier si il n'existe pas,a pour ne pas écraser les données présentes
+        file.write(f"Alerte température déclenchée le {current_time}, mails envoyés\n")
+
+    print("Fichier log/Alert implémenté\n")
+
+    led()  # Envoi du script du clignotement de la led pour l'aspect visuel
+    
+    print("Arrêt automatique du programme par mesure de sécurité\n")
+
+    # Assurer la déconnexion propre du client MQTT
+    try:
+        client.disconnect()  # Déconnexion avant l'arrêt
+        print("Client déconnecté proprement\n")
+    except Exception as e:
+        print(f"Erreur lors de la déconnexion du client : {e}")
+
+    # Exit proprement après nettoyage
+    sys.exit(0)  # Utiliser 0 pour indiquer une sortie normale, même si c'est une alerte
+
+
+if __name__ == "__main__":  
+
+    sonde()

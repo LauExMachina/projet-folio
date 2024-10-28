@@ -1,0 +1,17 @@
+account default
+
+host smtp.example.com  # Remplacer par le serveur SMTP de votre fournisseur
+
+from your-email@example.com  # Remplacer par votre adresse e-mail
+
+auth on
+
+user your-email@example.com  # Remplacer par votre adresse e-mail
+
+password your-password  # Remplacer par votre mot de passe SMTP
+
+tls on
+
+tls_starttls on
+
+logfile ~/.msmtp.log
